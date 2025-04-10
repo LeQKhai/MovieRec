@@ -7,7 +7,7 @@ import os
 import re
 import requests
 import gdown
-import rarfile  # Thư viện để giải nén file .rar
+import zipfile  # Thay rarfile bằng zipfile
 
 DATA_DIR = "data2"
 TMDB_API_KEY = "ab3e3f106356dbcb70df22107bb51b09"
@@ -19,17 +19,17 @@ def download_and_extract_data():
         print(f"Thư mục {DATA_DIR} không tồn tại. Tạo thư mục...")
         os.makedirs(DATA_DIR)
         st.write("Đang tải dữ liệu từ Google Drive...")
-        print("Tải file data2.rar từ Google Drive...")
-        file_id = "1oMyJaZO9i51LqKTclW6V-glAtF5ft_uM"  # FILE_ID mới của data2.rar
-        # url = f"https://drive.google.com/uc?id={file_id}"
-        output = "data2.rar"
-        gdown.download(id=file_id, output=output, quiet=False)
+        print("Tải file data2.zip từ Google Drive...")
+        file_id = "1F4xsw3ybzPW-rBi4WchccNq5MQmWgMsD"  # Thay bằng FILE_ID mới của data2.zip
+        url = f"https://drive.google.com/uc?id={file_id}"
+        output = "data2.zip"
+        gdown.download(url, output, quiet=False)
 
         st.write("Đang giải nén dữ liệu...")
-        print("Giải nén file data2.rar...")
-        with rarfile.RarFile(output, 'r') as rar_ref:
-            rar_ref.extractall(".")
-        print("Giải nén hoàn tất. Xóa file data2.rar...")
+        print("Giải nén file data2.zip...")
+        with zipfile.ZipFile(output, 'r') as zip_ref:
+            zip_ref.extractall(".")
+        print("Giải nén hoàn tất. Xóa file data2.zip...")
         os.remove(output)
     else:
         print(f"Thư mục {DATA_DIR} đã tồn tại. Bỏ qua tải và giải nén.")
