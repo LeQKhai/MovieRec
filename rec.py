@@ -21,9 +21,9 @@ def download_and_extract_data():
         st.write("Đang tải dữ liệu từ Google Drive...")
         print("Tải file data2.rar từ Google Drive...")
         file_id = "1oMyJaZO9i51LqKTclW6V-glAtF5ft_uM"  # FILE_ID mới của data2.rar
-        url = f"https://drive.google.com/uc?id={file_id}"
+        # url = f"https://drive.google.com/uc?id={file_id}"
         output = "data2.rar"
-        gdown.download(url, output, quiet=False)
+        gdown.download(id=file_id, output=output, quiet=False)
 
         st.write("Đang giải nén dữ liệu...")
         print("Giải nén file data2.rar...")
