@@ -18,14 +18,11 @@ def download_and_extract_data():
     if not os.path.exists(DATA_DIR):
         print(f"Thư mục {DATA_DIR} không tồn tại. Tạo thư mục...")
         os.makedirs(DATA_DIR)
-        st.write("Đang tải dữ liệu từ Google Drive...")
         print("Tải file data2.zip từ Google Drive...")
         file_id = "1F4xsw3ybzPW-rBi4WchccNq5MQmWgMsD"  # Thay bằng FILE_ID mới của data2.zip
         url = f"https://drive.google.com/uc?id={file_id}"
         output = "data2.zip"
         gdown.download(url, output, quiet=False)
-
-        st.write("Đang giải nén dữ liệu...")
         print("Giải nén file data2.zip...")
         with zipfile.ZipFile(output, 'r') as zip_ref:
             zip_ref.extractall(".")
@@ -123,10 +120,10 @@ def get_top_movies_by_genre(genre, movies):
 # Giao diện Streamlit
 def main():
     print("Khởi động ứng dụng Streamlit...")
-    st.title("Movie Recommender System (MovieLens 35M)")
+    st.title("Movie Recommender System")
 
     # Load dữ liệu với caching
-    with st.spinner("Đang tải dữ liệu (chỉ lần đầu)..."):
+    with st.spinner("Đang tải dữ liệu..."):
         print("Gọi hàm load_data...")
         ratings, movies = load_data()
         print("Gọi hàm create_tfidf_matrix...")
@@ -147,7 +144,7 @@ def main():
             st.session_state.mode = "top_by_genre"
             st.session_state.selected_genre = None
 
-        if st.button("Quay lại gợi ý phim", key="back_to_recommend"):
+        if st.button("Gợi ý phim", key="back_to_recommend"):
             print("Chuyển sang chế độ recommend...")
             st.session_state.mode = "recommend"
             st.session_state.selected_genre = None
@@ -162,7 +159,7 @@ def main():
 
     # Khu vực chính
     if st.session_state.mode == "recommend":
-        st.write("Chọn phim để nhận gợi ý tương tự với poster!")
+        st.write("Bạn muốn tìm phim giống phim của bạn?")
         movie_options = [""] + sorted(movies['title'].tolist())
         selected_movie = st.selectbox("Chọn phim để xem gợi ý:", options=movie_options, index=0, key="movie_select")
 
