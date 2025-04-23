@@ -8,6 +8,7 @@ import re
 import requests
 import gdown
 import zipfile  # Thay rarfile bằng zipfile
+import FixTitle
 
 DATA_DIR = "data2"
 TMDB_API_KEY = "ab3e3f106356dbcb70df22107bb51b09"
@@ -15,7 +16,7 @@ TMDB_API_KEY = "ab3e3f106356dbcb70df22107bb51b09"
 # Hàm tải và giải nén data2 từ Google Drive
 def download_and_extract_data():
     print("Bắt đầu kiểm tra thư mục data2...")
-    if not os.path.exists(DATA_DIR):
+    if not os.path.isfile(DATA_DIR):
         print(f"Thư mục {DATA_DIR} không tồn tại. Tạo thư mục...")
         os.makedirs(DATA_DIR)
         print("Tải file data2.zip từ Google Drive...")
@@ -31,41 +32,29 @@ def download_and_extract_data():
     else:
         print(f"Thư mục {DATA_DIR} đã tồn tại. Bỏ qua tải và giải nén.")
 
-# Hàm load và cache dữ liệu
 @st.cache_data
 def load_data():
-    print("Bắt đầu tải dữ liệu...")
-    download_and_extract_data()
-    print("Đang đọc file ratings.csv...")
+    # ... (các phần tải dữ liệu như trong mã gốc)
     ratings = pd.read_csv(os.path.join(DATA_DIR, "ratings.csv"))
-    print("Đang đọc file movies.csv...")
     movies = pd.read_csv(os.path.join(DATA_DIR, "movies.csv"))
-    print("Đang đọc file links.csv...")
     links = pd.read_csv(os.path.join(DATA_DIR, "links.csv"))
-    print("Đang đọc file tags.csv...")
     tags = pd.read_csv(os.path.join(DATA_DIR, "tags.csv"))
-    print("Gộp dữ liệu movies và links...")
+
+    # Tiền xử lý movies, bao gồm sửa tiêu đề
+    movies = FixTitle.preprocess_movies(movies)
+
+    # ... (các phần gộp dữ liệu và xử lý tiếp theo như trong mã gốc)
     movies = movies.merge(links[['movieId', 'tmdbId']], on='movieId', how='left')
-    print("Làm sạch tiêu đề phim...")
-    movies['clean_title'] = movies['title'].apply(clean_title)
-    # Xử lý NaN cho genres
-    movies['genres'] = movies['genres'].fillna("")
-    print("Tính toán ratings summary...")
     ratings_summary = ratings.groupby('movieId').agg({'rating': 'mean', 'userId': 'count'}).rename(
         columns={'rating': 'avg_rating', 'userId': 'num_votes'})
-    print("Gộp movies với ratings summary...")
     movies = movies.merge(ratings_summary, on='movieId', how='left')
-    print("Xử lý tags...")
-    # Chuyển cột tag thành chuỗi và thay thế NaN bằng chuỗi rỗng
-    tags['tag'] = tags['tag'].astype(str).replace('nan', '')  # Chuyển thành str và thay 'nan' bằng ''
-    # Nhóm tags theo movieId và nối thành chuỗi
+    tags['tag'] = tags['tag'].astype(str).replace('nan', '')
     tags_grouped = tags.groupby('movieId')['tag'].apply(lambda x: " ".join(x)).reset_index()
-    # Gộp tags vào movies
     movies = movies.merge(tags_grouped, on='movieId', how='left')
-    # Xử lý NaN cho tags
     movies['tag'] = movies['tag'].fillna("")
-    print("Hoàn tất tải dữ liệu.")
+
     return ratings, movies
+
 
 # Hàm tạo và cache TF-IDF matrix
 @st.cache_data
@@ -159,89 +148,6 @@ def get_top_movies_by_genre(genre, movies):
     top_movies = filtered_movies.sort_values(by=['num_votes', 'avg_rating'], ascending=[False, False]).head(10)
     print("Hoàn tất lấy top 10 phim.")
     return top_movies[['title', "tmdbId"]]
-
-# Giao diện Streamlit
-def main():
-    print("Khởi động ứng dụng Streamlit...")
-    st.title("Movie Recommender System")
-
-    # Load dữ liệu với caching
-    with st.spinner("Đang tải dữ liệu..."):
-        print("Gọi hàm load_data...")
-        ratings, movies = load_data()
-        print("Gọi hàm create_tfidf_matrix...")
-        vectorizer, tfidf_matrix = create_tfidf_matrix(movies)
-
-    # Khởi tạo session state để theo dõi chế độ
-    print("Khởi tạo session state...")
-    if 'mode' not in st.session_state:
-        st.session_state.mode = "recommend"
-    if 'selected_genre' not in st.session_state:
-        st.session_state.selected_genre = None
-
-    # Sidebar
-    with st.sidebar:
-        st.header("Tùy chọn")
-        if st.button("Chọn phim theo thể loại", key="genre_button"):
-            print("Chuyển sang chế độ top_by_genre...")
-            st.session_state.mode = "top_by_genre"
-            st.session_state.selected_genre = None
-
-        if st.button("Gợi ý phim", key="back_to_recommend"):
-            print("Chuyển sang chế độ recommend...")
-            st.session_state.mode = "recommend"
-            st.session_state.selected_genre = None
-
-        if st.session_state.mode == "top_by_genre":
-            print("Hiển thị danh sách thể loại...")
-            genres_list = get_unique_genres(movies)
-            selected_genre = st.selectbox("Chọn thể loại:", genres_list, key="genre_select")
-            if selected_genre:
-                print(f"Đã chọn thể loại: {selected_genre}")
-                st.session_state.selected_genre = selected_genre
-
-    # Khu vực chính
-    if st.session_state.mode == "recommend":
-        st.write("Bạn muốn tìm phim giống phim của bạn?")
-        movie_options = [""] + sorted(movies['title'].tolist())
-        selected_movie = st.selectbox("Chọn phim để xem gợi ý:", options=movie_options, index=0, key="movie_select")
-
-        if st.button("Xem phim tương tự", key="recommend_button"):
-            if selected_movie and selected_movie in movies['title'].values:
-                with st.spinner("Đang tìm phim tương tự..."):
-                    print(f"Đã chọn phim: {selected_movie}")
-                    movie_id = movies[movies['title'] == selected_movie]['movieId'].iloc[0]
-                    recommendations = find_similar_movies(movie_id, ratings, movies)
-                    st.subheader(f"Phim tương tự với '{selected_movie}':")
-                    cols = st.columns(5)
-                    for i, (col, row) in enumerate(zip(cols, recommendations.itertuples())):
-                        with col:
-                            poster_url = get_poster_url(row.tmdbId)
-                            if poster_url:
-                                st.image(poster_url, width=120)
-                            else:
-                                st.write("(Không có poster)")
-                            st.write(f"{i + 1}. {row.title}")
-            else:
-                st.warning("Vui lòng chọn một phim từ danh sách trước khi nhấn nút!")
-
-    elif st.session_state.mode == "top_by_genre" and st.session_state.selected_genre:
-        with st.spinner("Đang tải top phim..."):
-            print(f"Tải top phim cho thể loại: {st.session_state.selected_genre}")
-            top_movies = get_top_movies_by_genre(st.session_state.selected_genre, movies)
-            st.subheader(f"Top 10 phim thuộc thể loại '{st.session_state.selected_genre}':")
-            for row_idx in range(2):
-                cols = st.columns(5)
-                start_idx = row_idx * 5
-                end_idx = min((row_idx + 1) * 5, len(top_movies))
-                for i, (col, row) in enumerate(zip(cols, top_movies.iloc[start_idx:end_idx].itertuples())):
-                    with col:
-                        poster_url = get_poster_url(row.tmdbId)
-                        if poster_url:
-                            st.image(poster_url, width=120)
-                        else:
-                            st.write("(Không có poster)")
-                        st.write(f"{start_idx + i + 1}. {row.title}")
 
 # Giao diện Streamlit
 def main():
