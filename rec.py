@@ -8,6 +8,8 @@ import re
 import requests
 import gdown
 import zipfile  # Thay rarfile bằng zipfile
+
+import FixEncoding
 import FixTitle
 
 DATA_DIR = "data2"
@@ -16,7 +18,7 @@ TMDB_API_KEY = "ab3e3f106356dbcb70df22107bb51b09"
 # Hàm tải và giải nén data2 từ Google Drive
 def download_and_extract_data():
     print("Bắt đầu kiểm tra thư mục data2...")
-    if not os.path.isfile(DATA_DIR):
+    if not os.path.exists(DATA_DIR):
         print(f"Thư mục {DATA_DIR} không tồn tại. Tạo thư mục...")
         os.makedirs(DATA_DIR)
         print("Tải file data2.zip từ Google Drive...")
@@ -34,6 +36,7 @@ def download_and_extract_data():
 
 @st.cache_data
 def load_data():
+    download_and_extract_data()
     # ... (các phần tải dữ liệu như trong mã gốc)
     ratings = pd.read_csv(os.path.join(DATA_DIR, "ratings.csv"))
     movies = pd.read_csv(os.path.join(DATA_DIR, "movies.csv"))
@@ -42,6 +45,7 @@ def load_data():
 
     # Tiền xử lý movies, bao gồm sửa tiêu đề
     movies = FixTitle.preprocess_movies(movies)
+    tags['tag'] = tags['tag'].apply(FixEncoding.fix_encoding)
 
     # ... (các phần gộp dữ liệu và xử lý tiếp theo như trong mã gốc)
     movies = movies.merge(links[['movieId', 'tmdbId']], on='movieId', how='left')
