@@ -34,6 +34,8 @@ FixTitle.py, FixEncoding.py: Module chuẩn hóa tiêu đề phim.
 
 data2/: Thư mục chứa dữ liệu MovieLens (tự động tải).
 
+file jupyter: Giải thích kỹ cách hoạt động và các bước
+
 Dữ liệu
 
 MovieLens: Bao gồm ratings.csv, movies.csv, tags.csv, links.csv.
