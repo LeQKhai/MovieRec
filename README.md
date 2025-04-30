@@ -6,14 +6,19 @@ Movie Recommender System là ứng dụng đề xuất phim dựa trên sở th�
 Ứng dụng sử dụng Streamlit để tạo giao diện thân thiện, hiển thị gợi ý kèm poster phim.
 
 Cài đặt
+
 Clone repository:
   git clone https://github.com/LeQKhai/MovieRec
+
 Cài đặt thư viện:
   pip install -r requirements.txt
+  
 Sử dụng
 Chạy ứng dụng:
   streamlit run app.py
+  
 Truy cập giao diện tại http://localhost:8501.
+
 Chọn chế độ:
 Gợi ý phim: Chọn một phim và phương pháp (Collaborative, Content-Based, Hybrid) để nhận gợi ý.
 Chọn theo thể loại: Chọn thể loại để xem top 10 phim phổ biến.
